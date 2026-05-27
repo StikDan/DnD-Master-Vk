@@ -1,0 +1,4 @@
+vkbottle
+ollama
+python-dotenv
+aiosqlite

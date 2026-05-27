@@ -1,0 +1,8 @@
+id_characteristic,id_npc,strength,dexterity,constitution,intelligence,wisdom,charisma
+1,1,16,14,14,12,13,14
+2,2,12,14,14,16,14,18
+3,3,10,12,12,14,16,18
+4,4,8,14,10,12,13,11
+5,5,6,8,10,16,18,12
+6,6,14,12,13,10,12,8
+7,7,10,10,12,13,10,14
