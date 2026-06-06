@@ -1,7 +1,6 @@
 import os
 import aiohttp
 from dotenv import load_dotenv
-from conversation_history import ConversationHistory
 from utils import Utils
 from config import Config
 
@@ -16,8 +15,7 @@ class OllamaClient:
         if system_prompt:
             self.system_prompt = system_prompt
         else:
-            prompt_file = os.environ.get('PROMPT_FILE', 'systemPrompt.md')
-            self.system_prompt = ConversationHistory.load_prompt(prompt_file)
+            self.system_prompt = os.environ.get('PROMPT_FILE', 'systemPrompt.md')
         
         self.url = "http://localhost:11434/api/chat"
         self.headers = {"Content-Type": "application/json"}

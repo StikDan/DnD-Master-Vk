@@ -15,13 +15,15 @@ class StateManager:
     
 
     def set_state(self, new_state: State) -> bool:
-        """Переключает состояние сессии"""
+        """Переключает состояние"""
         if self.state == new_state:
             return False
         
         old_state = self.state
         self.state = new_state
         self._message_count = 0
+        # Сбрасываем кэш при смене состояния
+        self.invalidate_cache()
         print(f"Состояние: {old_state.name} -> {new_state.name}")
         return True
     
@@ -66,8 +68,12 @@ class StateManager:
     
 
     def get_system_prompt(self) -> str:
-        """Возвращает актуальный системный промпт для текущего состояния"""
+        """Возвращает промпт для текущего состояния"""
         return self._build_prompt_for_state(self.state)
+    
+    def get_system_prompt_for_state(self, state: State) -> str:
+        """Возвращает промпт для указанного состояния (не меняя текущее)"""
+        return self._build_prompt_for_state(state)
     
 
     def invalidate_cache(self, state: Optional[State] = None):
@@ -78,29 +84,28 @@ class StateManager:
             self._prompt_cache.clear()
 
 
-    async def auto_detect_state(self, user_message: str, ollama_client) -> None:
-        """Авто-детект состояния по сообщению."""
+    async def auto_detect_state(self, user_message: str, ollama_client) -> Optional[State]:
+        """Авто-детект состояния по сообщению. Возвращает detected state или None."""
         
         self._message_count += 1
         
         message_lower = user_message.lower()
         
         quick_map = {
-            State.COMBAT: ["бой","атакую", "бью", "удар", "враг", "монстр", "сражаюсь", "убить", "атака", "раню", "кричу", "убиваю"],
-            State.SOCIAL: ["диалог","спрашиваю", "говорю", "привет", "кто ты", "расскажи", "диалог", "здравствуй", "болтаю", "торгуюсь", "спросить"],
-            State.EXPLORATION: ["исследование","иду", "смотрю", "осматриваю", "где", "что здесь", "дверь", "комната", "коридор", "ищу", "проверяю", "хожу"],
-            State.REST: ["отдых","отдыхаю", "сплю", "ем", "пью", "лечусь", "привал", "ночую", "пью зелье", "ем еду", "отдых"],
+            State.COMBAT: ["бой", "атакую", "бью", "удар", "враг", "монстр", "сражаюсь", "убить", "атака", "раню", "кричу", "убиваю"],
+            State.SOCIAL: ["диалог", "спрашиваю", "говорю", "привет", "кто ты", "расскажи", "диалог", "здравствуй", "болтаю", "торгуюсь", "спросить"],
+            State.EXPLORATION: ["исследование", "иду", "смотрю", "осматриваю", "где", "что здесь", "дверь", "комната", "коридор", "ищу", "проверяю", "хожу"],
+            State.REST: ["отдых", "отдыхаю", "сплю", "ем", "пью", "лечусь", "привал", "ночую", "пью зелье", "ем еду", "отдых"],
         }
         
         for state, keywords in quick_map.items():
             if any(keyword in message_lower for keyword in keywords):
                 if self.state != state:
                     self.set_state(state)
-                    self.invalidate_cache()
-                return
+                return state
         
         if self._message_count < self._detect_threshold:
-            return
+            return None
         
         self._message_count = 0
         
@@ -125,7 +130,9 @@ class StateManager:
         detected_state = state_map.get(response.strip().upper(), State.NONE)
         if detected_state != State.NONE and detected_state != self.state:
             self.set_state(detected_state)
-            self.invalidate_cache()
+            return detected_state
+        
+        return None
     
 
     def reset_counter(self):
