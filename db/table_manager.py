@@ -1,5 +1,5 @@
 import json
-from .db_connection import Database
+from .database import Database
 
 
 class TableManager:

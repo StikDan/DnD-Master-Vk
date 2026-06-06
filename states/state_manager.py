@@ -9,7 +9,6 @@ class StateManager:
         self.prompts_dir = prompts_dir
         self.state = State.NONE
         self._prompt_cache: dict[State, str] = {}
-        
         self._message_count = 0
         self._detect_threshold = detect_threshold
     
@@ -22,8 +21,8 @@ class StateManager:
         old_state = self.state
         self.state = new_state
         self._message_count = 0
-        # Сбрасываем кэш при смене состояния
-        self.invalidate_cache()
+        self.take_out_cache()
+
         print(f"Состояние: {old_state.name} -> {new_state.name}")
         return True
     
@@ -76,7 +75,7 @@ class StateManager:
         return self._build_prompt_for_state(state)
     
 
-    def invalidate_cache(self, state: Optional[State] = None):
+    def take_out_cache(self, state: Optional[State] = None):
         """Сбрасывает кэш промптов"""
         if state:
             self._prompt_cache.pop(state, None)

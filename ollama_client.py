@@ -10,6 +10,7 @@ load_dotenv()
 class OllamaClient:
     def __init__(self, system_prompt: str | None = None):
         self.config = Config()
+        self.utils = Utils()
         self.model = os.environ.get('OLLAMA_MODEL', '')
         
         if system_prompt:
@@ -29,7 +30,7 @@ class OllamaClient:
         limit = self.config.MEMORY_PAIR
         for msg in (history[-limit:] if limit else history):
             if isinstance(msg, dict):
-                role = Utils.map_role(msg.get("role", ""))
+                role = self.utils.map_role(msg.get("role", ""))
                 content = msg.get("content", "")
                 if role and content:
                     messages.append({"role": role, "content": content})

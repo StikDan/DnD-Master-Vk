@@ -1,6 +1,6 @@
 import json
 from abc import ABC, abstractmethod
-from db.db_connection import Database
+from db.database import Database
 from db.migrations import run_migrations
 
 

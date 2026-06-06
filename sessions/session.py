@@ -1,21 +1,44 @@
 from typing import Optional
 from states.state import State
+from states.state_manager import StateManager
 
 
 class Session:
-    def __init__(self, session_id: str):
+    def __init__(self, session_id: str, prompts_dir: str = "data/prompts"):
         self.session_id = session_id
-        self.state = State.NONE
-        self.history: list[dict] = []
-        self.chat_ids: set[int] = set()  # peer_id чатов, привязанных к сессии
-        self._message_count = 0
-        self.active = True
+        self.state_manager = StateManager(prompts_dir)
+
     
-    def add_chat(self, peer_id: int):
-        self.chat_ids.add(peer_id)
+    def get_state(self) -> State:
+        """Получает текущее состояние сессии"""
+        return self.state_manager.get_state()
     
-    def remove_chat(self, peer_id: int):
-        self.chat_ids.discard(peer_id)
+
+    def set_state(self, new_state: State) -> bool:
+        """Устанавливает состояние сессии"""
+        return self.state_manager.set_state(new_state)
     
-    def has_chat(self, peer_id: int) -> bool:
-        return peer_id in self.chat_ids
+
+    def get_system_prompt(self) -> str:
+        """Получает системный промпт для текущего состояния"""
+        return self.state_manager.get_system_prompt()
+    
+
+    def get_system_prompt_for_state(self, state: State) -> str:
+        """Получает промпт для указанного состояния"""
+        return self.state_manager.get_system_prompt_for_state(state)
+    
+    
+    async def auto_detect_state(self, user_message: str, ollama_client) -> Optional[State]:
+        """Авто-детект состояния по сообщению"""
+        return await self.state_manager.auto_detect_state(user_message, ollama_client)
+    
+
+    def take_out_cache(self, state: Optional[State] = None):
+        """Сбрасывает кэш промптов"""
+        self.state_manager.take_out_cache(state)
+    
+
+    def reset_counter(self):
+        """Сбрасывает счётчик сообщений"""
+        self.state_manager.reset_counter()

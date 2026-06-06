@@ -1,6 +1,6 @@
 from db.Modules.base_importer import BaseImporter
 from db.table_manager import TableManager
-from db.db_connection import Database
+from db.database import Database
 
 class ImportHistory(BaseImporter):
     """Импортер для истории сообщений"""

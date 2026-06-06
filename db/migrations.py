@@ -1,4 +1,4 @@
-from .db_connection import Database
+from .database import Database
 from .Models.global_history import CREATE_TABLE as CREATE_GLOBAL_HISTORY
 from .Models.npc import CREATE_TABLE as CREATE_NPC
 from .Models.session import CREATE_TABLE as CREATE_SESSION
