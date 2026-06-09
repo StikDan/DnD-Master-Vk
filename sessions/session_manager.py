@@ -55,3 +55,16 @@ class SessionManager:
         
         del self.sessions[session_id]
         return True
+    
+
+    def get_all_sessions(self) -> list:
+        """Возвращает список всех сессий с информацией"""
+        sessions_info = []
+        for session_id, session in self.sessions.items():
+            chats = [pid for pid, sid in self.peer_to_session.items() if sid == session_id]
+            sessions_info.append({
+                'id': session_id,
+                'chats_count': len(chats),
+                'state': session.get_state().name if session.get_state() else 'NONE'
+            })
+        return sessions_info

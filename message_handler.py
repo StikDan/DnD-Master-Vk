@@ -1,10 +1,12 @@
-from typing import Optional, Callable
+# message_handler.py
+from typing import Callable
 from config import Config
 from db.Modules import factory_importer
 from vkbottle.bot import Message
 from sessions.session_manager import SessionManager
 from sessions.session_history import SessionHistory
-from states.state import State
+from keyboard import KeyboardBuilder
+from commands import SessionCommands, DiceCommands
 
 
 class MessageHandler:
@@ -13,30 +15,36 @@ class MessageHandler:
         self.session_manager = session_manager
         self.session_history = session_history
         self.import_module = factory_importer
+        
+        # Инициализируем модули команд
+        self.session_commands = SessionCommands(session_manager)
+        self.dice_commands = DiceCommands()
+        
+        # Регистрируем все команды
         self._commands = self._register_commands()
     
 
     def _register_commands(self) -> dict[str, Callable]:
-        """Регистрирует доступные команды"""
-        return {
-            'session new': self._cmd_session_new,
-            'session state': self._cmd_session_state,
+        """Регистрирует все команды"""
+        commands = {}
+        commands.update(self.session_commands.register())
+        commands.update(self.dice_commands.register())
+        commands.update({
             'retry': self._cmd_retry,
             'import-history': self._cmd_import_history,
             'import-npcs': self._cmd_import_npcs,
             'commands': self._cmd_commands,
-        }
+        })
+        return commands
     
 
     async def _retry_message(self, session_id: str):
         """Откатить последних 2 сообщения в сессии"""
         await self.session_history.delete_last_message(session_id, 2)
-    
+
 
     async def handle_command(self, message: Message, peer_id: int, text: str) -> bool:
-        """
-        Обработка команд. Возвращает True, если команда распознана.
-        """
+        """Обработка команд. Возвращает True, если команда распознана."""
         if not text or not text.startswith(self.config.IGNORE_PREFIX):
             return False
         
@@ -51,61 +59,89 @@ class MessageHandler:
         return False
     
     
+    async def handle_payload(self, message: Message, peer_id: int, payload: dict) -> bool:
+        """Обработка payload от кнопок."""
+        if not payload:
+            return False
+        
+        # Сначала проверяем кубики
+        if await self.dice_commands.handle_payload(message, peer_id, payload):
+            return True
+        
+        # Обработка команд из кнопок
+        if 'command' in payload:
+            command = payload['command']
+            text = f"{self.config.IGNORE_PREFIX}{command}"
+            return await self.handle_command(message, peer_id, text)
+        
+        return False
+    
+    
     async def _cmd_session_new(self, message: Message, peer_id: int, text: str, session):
         """!session new [name] — создать новую сессию"""
-        parts = text.split(maxsplit=2)
-        name = parts[2] if len(parts) > 2 else None
-        
-        new_id = self.session_manager.create_session(name)
-        self.session_manager.assign_chat_to_session(peer_id, new_id)
-        await message.answer(f"Создана новая сессия: `{new_id}`")
+        await self.session_commands.cmd_session_new(message, peer_id, text, session)
     
 
     async def _cmd_session_state(self, message: Message, peer_id: int, text: str, session):
-        """!session state [state] — текущее состояние"""
-        if session is None:
-            await message.answer("Нет активной сессии")
-            return
-        
-        current_state = session.get_state()
-        await message.answer(f"Текущее состояние: {current_state.name}")
+        """!session state — текущее состояние"""
+        await self.session_commands.cmd_session_state(message, peer_id, text, session)
     
 
     async def _cmd_retry(self, message: Message, peer_id: int, text: str, session):
         """!retry — откатить последний запрос"""
         if session:
             await self._retry_message(session.session_id)
-            await message.answer(f"Откат в сессии `{session.session_id}` выполнен!")
+            await message.answer(
+                f"Откат в сессии `{session.session_id}` выполнен!",
+                keyboard=KeyboardBuilder.get_main_keyboard().get_json()
+            )
         else:
-            await message.answer("Нет активной сессии")
+            await message.answer(
+                "Нет активной сессии",
+                keyboard=KeyboardBuilder.get_main_keyboard().get_json()
+            )
     
 
     async def _cmd_import_history(self, message: Message, peer_id: int, text: str, session):
         """!import-history — импорт истории"""
         importer = self.import_module.get_importer("history")
         result = await importer.import_data(self.config.HISTORY_FILE)
-        await message.answer(result)
-    
+        await message.answer(
+            result,
+            keyboard=KeyboardBuilder.get_main_keyboard().get_json()
+        )
+
 
     async def _cmd_import_npcs(self, message: Message, peer_id: int, text: str, session):
         """!import-npcs — импорт NPC"""
         importer = self.import_module.get_importer("npc")
         result = await importer.import_from_folder("data/NPC")
-        await message.answer(result)
+        await message.answer(
+            result,
+            keyboard=KeyboardBuilder.get_main_keyboard().get_json()
+        )
     
 
     async def _cmd_commands(self, message: Message, peer_id: int, text: str, session):
         """!commands — список команд"""
-        await message.answer('''
+        await message.answer(
+            '''
 Команды сессий:
 `!session new [name]` — создать новую сессию
-`!session state [state]` — показать текущее состояние
+`!session list` — показать все сессии
+`!session join <id>` — присоединиться к сессии
+`!session state` — показать текущее состояние
 
-**Команды истории:**
+Броски:
+`!dice` — показать клавиатуру с кубиками
+
+Команды истории:
 `!clear` — очистить историю сессии
 `!retry` — откатить последний запрос
 
-**Импорт команды:**
+Импорт команды:
 `!import-history` — импортировать историю из JSON
 `!import-npcs` — импортировать NPC из папки
-        ''')
+        ''',
+            keyboard=KeyboardBuilder.get_main_keyboard().get_json()
+        )
