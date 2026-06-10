@@ -2,27 +2,28 @@ TABLE_NAME = "npc"
 
 CREATE_TABLE = f"""CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id VARCHAR(100),
     
-    -- Основная информация
     name VARCHAR(100) NOT NULL,
-    title VARCHAR(200) NOT NULL,
-    status VARCHAR(50) DEFAULT 'Жив',
-    race VARCHAR(50) NOT NULL,
-    age VARCHAR(50) NOT NULL,
-    role TEXT NOT NULL,
-    description TEXT NOT NULL,
-    appearance TEXT NOT NULL,
+    title VARCHAR(200),
+    race VARCHAR(50),
+    gender VARCHAR(20),
+    age VARCHAR(50),
+    role TEXT,
+    description TEXT,
+    appearance TEXT,
     
-    -- Характеристики D&D в JSON
-    ability_scores JSON NOT NULL,
+    cr VARCHAR(20),
+    ability_scores JSON,
     hit_points INTEGER DEFAULT 15,
-    armor_class INTEGER NOT NULL,
+    armor_class INTEGER DEFAULT 10,
     speed INTEGER DEFAULT 30,
     
-    -- Сложные данные в JSON
     personality JSON,
     skills JSON,
     actions JSON,
+    reactions JSON,
+    legendary_actions JSON,
     racial_traits JSON,
     combat_tactics JSON,
     equipment JSON,
@@ -34,6 +35,11 @@ CREATE_TABLE = f"""CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
     loot JSON,
     gm_notes JSON,
 
-    -- Метаданные
-    is_active BOOLEAN DEFAULT 1
-);"""
+    is_active BOOLEAN DEFAULT 1,
+    is_alive BOOLEAN DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (session_id) REFERENCES session(session_id) ON DELETE SET NULL
+);
+"""

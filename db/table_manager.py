@@ -100,5 +100,5 @@ class TableManager:
                 )
                 return True
         except Exception as e:
-            print(f"❌ Ошибка удаления из БД: {e}")
+            print(f"Ошибка удаления из БД: {e}")
             return False
