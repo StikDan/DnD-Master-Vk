@@ -5,7 +5,6 @@ CREATE_TABLE = f"""CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
     session_id VARCHAR(100) NOT NULL,
     role VARCHAR(45) NOT NULL,
     content TEXT NOT NULL,
-    message_type VARCHAR(50) DEFAULT 'text',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     FOREIGN KEY (session_id) REFERENCES session(session_id) ON DELETE CASCADE

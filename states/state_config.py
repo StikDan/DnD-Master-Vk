@@ -10,7 +10,6 @@ STATE_FILES: Dict[State, List[str]] = {
         "characters.md",
         "adventure.md",
         "exploreRules.md",
-        "eid.md",
         "transitionRules.md"
     ],
     
@@ -19,8 +18,6 @@ STATE_FILES: Dict[State, List[str]] = {
         "characters.md",
         "adventure.md",
         "fightRules.md",
-        "eid.md",
-        "drakman.md",
         "transitionRules.md"
     ],
     
@@ -29,8 +26,6 @@ STATE_FILES: Dict[State, List[str]] = {
         "characters.md",
         "adventure.md",
         "dialogRules.md",
-        "eid.md",
-        "drakman.md",
         "transitionRules.md"
     ],
     
@@ -39,7 +34,6 @@ STATE_FILES: Dict[State, List[str]] = {
         "characters.md",
         "adventure.md",
         "restRules.md",
-        "eid.md",
         "transitionRules.md"
     ],
 }
