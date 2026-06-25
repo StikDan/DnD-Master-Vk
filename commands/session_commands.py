@@ -4,10 +4,10 @@ from keyboard import KeyboardBuilder
 
 class SessionCommands:
     """Команды управления сессиями."""
-    
     def __init__(self, session_manager):
         self.session_manager = session_manager
     
+
     def register(self) -> dict:
         """Регистрирует команды сессий."""
         return {
@@ -17,25 +17,29 @@ class SessionCommands:
             'session state': self.cmd_session_state,
         }
     
+
     async def cmd_session_new(self, message: Message, peer_id: int, text: str, session):
         """!session new [name] — создать новую сессию"""
         parts = text.split(maxsplit=2)
         name = parts[2] if len(parts) > 2 else None
         
-        new_id = self.session_manager.create_session(name)
-        self.session_manager.assign_chat_to_session(peer_id, new_id)
+        new_id = await self.session_manager.create_session_async(name)
+        
+        await self.session_manager.assign_chat_to_session(peer_id, new_id)
+        
         await message.answer(
             f"Создана новая сессия: `{new_id}`",
             keyboard=KeyboardBuilder.get_main_keyboard().get_json()
         )
     
+
     async def cmd_session_join(self, message: Message, peer_id: int, text: str, session):
-        """!session join <id> — присоединиться к сессии"""
+        """!session join [id] — присоединиться к сессии"""
         parts = text.split(maxsplit=2)
         
         if len(parts) < 3:
             await message.answer(
-                "Использование: `!session join <ID сессии>`\n\n"
+                "Использование: `!session join [ID сессии]`\n\n"
                 "Пример: `!session join abc12345`",
                 keyboard=KeyboardBuilder.get_main_keyboard().get_json()
             )
@@ -51,12 +55,13 @@ class SessionCommands:
             )
             return
         
-        self.session_manager.assign_chat_to_session(peer_id, session_id)
+        await self.session_manager.assign_chat_to_session(peer_id, session_id)
         await message.answer(
             f"✅ Вы присоединились к сессии: `{session_id}`",
             keyboard=KeyboardBuilder.get_main_keyboard().get_json()
         )
     
+
     async def cmd_session_list(self, message: Message, peer_id: int, text: str, session):
         """!session list — показать все сессии"""
         sessions = self.session_manager.get_all_sessions()
@@ -68,7 +73,7 @@ class SessionCommands:
             )
             return
         
-        response = "📋 **Активные сессии**:\n\n"
+        response = "📋 Активные сессии:\n\n"
         for s in sessions:
             current = "📍 " if s['id'] == (session.session_id if session else "") else ""
             response += (
@@ -76,13 +81,14 @@ class SessionCommands:
                 f"   Чатов: {s['chats_count']} | Состояние: {s['state']}\n\n"
             )
         
-        response += "\nДля присоединения: `!session join <ID>`"
+        response += "\nДля присоединения: `!session join [id]`"
         
         await message.answer(
             response,
             keyboard=KeyboardBuilder.get_main_keyboard().get_json()
         )
     
+
     async def cmd_session_state(self, message: Message, peer_id: int, text: str, session):
         """!session state — текущее состояние"""
         if session is None:
@@ -95,5 +101,26 @@ class SessionCommands:
         current_state = session.get_state()
         await message.answer(
             f"Текущее состояние: {current_state.name}",
+            keyboard=KeyboardBuilder.get_main_keyboard().get_json()
+        )
+
+
+    async def cmd_session_new_text(self, message: Message, peer_id: int, text: str):
+        """Создать сессию с указанным именем"""
+        name = text.strip()
+        
+        if not name:
+            await message.answer(
+                "Имя сессии не может быть пустым. Введите имя:",
+                keyboard=KeyboardBuilder.get_main_keyboard().get_json()
+            )
+            return
+
+        new_id = await self.session_manager.create_session_async(name)
+        
+        await self.session_manager.assign_chat_to_session(peer_id, new_id)
+        
+        await message.answer(
+            f"Создана новая сессия: `{new_id}`",
             keyboard=KeyboardBuilder.get_main_keyboard().get_json()
         )

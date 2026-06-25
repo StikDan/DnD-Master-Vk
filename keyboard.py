@@ -43,7 +43,7 @@ class KeyboardBuilder:
             .add(Text("🎲 d100", payload={"dice": "d100"}), color=KeyboardButtonColor.POSITIVE)
             .row()
             
-            .add(Text("❌ Отмена", payload={"dice": "cancel"}), color=KeyboardButtonColor.NEGATIVE)
+            .add(Text("Отмена", payload={"dice": "cancel"}), color=KeyboardButtonColor.NEGATIVE)
         )
         
         return keyboard

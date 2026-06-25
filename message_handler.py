@@ -20,6 +20,9 @@ class MessageHandler:
         self.session_commands = SessionCommands(session_manager)
         self.dice_commands = DiceCommands()
         
+        # Словарь для хранения ожидающих действий
+        self._pending_actions: dict[int, str] = {}
+
         # Регистрируем все команды
         self._commands = self._register_commands()
     
@@ -45,6 +48,16 @@ class MessageHandler:
 
     async def handle_command(self, message: Message, peer_id: int, text: str) -> bool:
         """Обработка команд. Возвращает True, если команда распознана."""
+        
+        if peer_id in self._pending_actions:
+            action = self._pending_actions.pop(peer_id)
+            if action == 'session new':
+                if text.startswith(self.config.IGNORE_PREFIX):
+                    return False
+                
+                await self.session_commands.cmd_session_new_text(message, peer_id, text)
+                return True
+
         if not text or not text.startswith(self.config.IGNORE_PREFIX):
             return False
         
@@ -71,6 +84,16 @@ class MessageHandler:
         # Обработка команд из кнопок
         if 'command' in payload:
             command = payload['command']
+            
+            # Обработка новой сессии
+            if command == 'session new':
+                self._pending_actions[peer_id] = 'session new'
+                await message.answer(
+                    "Введите имя для новой сессии:",
+                    keyboard=KeyboardBuilder.get_main_keyboard().get_json()
+                )
+                return True
+
             text = f"{self.config.IGNORE_PREFIX}{command}"
             return await self.handle_command(message, peer_id, text)
         
@@ -129,7 +152,7 @@ class MessageHandler:
 Команды сессий:
 `!session new [name]` — создать новую сессию
 `!session list` — показать все сессии
-`!session join <id>` — присоединиться к сессии
+`!session join [id]` — присоединиться к сессии
 `!session state` — показать текущее состояние
 
 Броски:
@@ -138,10 +161,6 @@ class MessageHandler:
 Команды истории:
 `!clear` — очистить историю сессии
 `!retry` — откатить последний запрос
-
-Импорт команды:
-`!import-history` — импортировать историю из JSON
-`!import-npcs` — импортировать NPC из папки
         ''',
             keyboard=KeyboardBuilder.get_main_keyboard().get_json()
         )

@@ -72,7 +72,7 @@ class Dice:
             return f"❌ {result['error']}"
         
         response = (
-            f"🎲 <b>Бросок {result['dice_type']}</b>\n\n"
+            f"🎲 Бросок {result['dice_type']}\n\n"
             f"Результаты: {', '.join(map(str, result['rolls']))}\n"
         )
         
@@ -80,11 +80,11 @@ class Dice:
             sign = '+' if result['modifier'] > 0 else ''
             response += f"Модификатор: {sign}{result['modifier']}\n"
         
-        response += f"<b>Итого: {result['total']}</b>"
+        response += f"Итого: {result['total']}"
         
         if result.get('is_crit'):
-            response += "\n\n⭐ <b>Критический успех!</b>"
+            response += "\n\n⭐ Критический успех!"
         elif result.get('is_fail'):
-            response += "\n\n❌ <b>Критический провал!</b>"
+            response += "\n\n❌ Критический провал!"
         
         return response

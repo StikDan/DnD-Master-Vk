@@ -20,7 +20,7 @@ class VKBot:
         self.utils = Utils()
         self.model = OllamaClient()
         self.db = Database()
-        self.session_manager = SessionManager(prompts_dir="data/prompts")
+        self.session_manager = SessionManager(str(self.config.DB_PATH), prompts_dir="data/prompts")
         self.session_history: Optional[SessionHistory] = None
         self.handler: Optional[MessageHandler] = None
         
@@ -39,14 +39,18 @@ class VKBot:
             await run_migrations(db)
         print("База данных готова")
         
+        await self.session_manager.init_db()
+        
         self.session_history = SessionHistory(str(self.config.DB_PATH))
         
+        # Создаём сессию по умолчанию
         default_session_id = self.session_manager.create_session("default")
-
+        
         self.handler = MessageHandler(self.config, self.session_manager, self.session_history)
         
         print('Бот ВК запущен!')
-        print(f'Создана сессия по умолчанию: {default_session_id}')
+        print(f'Сессия по умолчанию: {default_session_id}')
+        print(f'Загружено сессий из БД: {len(self.session_manager.sessions)}')
 
 
     def start(self):
@@ -121,16 +125,18 @@ class VKBot:
 
 
     async def _get_or_create_session(self, peer_id: int):
-        session = self.session_manager.get_session_by_peer_id(peer_id)
-        if session:
-            return session.session_id, session
-        
-        session_id = self.session_manager.create_session()
-        self.session_manager.assign_chat_to_session(peer_id, session_id)
-        session = self.session_manager.get_session_by_name(session_id)
-        
-        print(f"Чат {peer_id} создан. ID сессии: {session_id}")
-        return session_id, session
+            """Получает или создаёт сессию для чата."""
+            session = self.session_manager.get_session_by_peer_id(peer_id)
+            if session:
+                return session.session_id, session
+            
+            # Создаём новую сессию с сохранением в БД
+            session_id = await self.session_manager.create_session_async()
+            await self.session_manager.assign_chat_to_session(peer_id, session_id)
+            session = self.session_manager.get_session_by_name(session_id)
+            
+            print(f"Чат {peer_id} создан. ID сессии: {session_id}")
+            return session_id, session
 
 
     async def _show_typing(self, peer_id: int):

@@ -73,7 +73,7 @@ class DiceCommands:
         if dice_value in Dice.DICE_TYPES.keys():
             self.dice_manager.select_dice(peer_id, dice_value)
             await message.answer(
-                f"Выбран **{dice_value}**. Выберите модификатор:",
+                f"Выбран {dice_value}. Выберите модификатор:",
                 keyboard=KeyboardBuilder.get_dice_modifier_keyboard(dice_value).get_json()
             )
             return True

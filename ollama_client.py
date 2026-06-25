@@ -19,7 +19,9 @@ class OllamaClient:
             self.system_prompt = os.environ.get('PROMPT_FILE', 'systemPrompt.md')
         
         self.url = "http://localhost:11434/api/chat"
-        self.headers = {"Content-Type": "application/json"}
+        self.headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + os.environ.get('OLLAMA_API_KEY', '')}
 
     def _build_messages(self, user_message: str, history: list) -> list:
         messages = []
